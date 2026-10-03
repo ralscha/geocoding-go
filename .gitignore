@@ -1,0 +1,17 @@
+*.pbf
+*.db
+*.exe
+*.test
+*.prof
+coverage.out
+geocode-import-*/
+.geocode-build-*
+bin/
+.cache/
+/dist/
+/geocode
+/data/
+/tmp/
+.idea/
+.vscode/
+.DS_Store

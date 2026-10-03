@@ -1,0 +1,161 @@
+version: '3'
+
+vars:
+  RELEASE_TAG_PATTERN: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds: [task --list]
+
+  format:
+    desc: Modernize and format Go code
+    cmds:
+      - go fix ./...
+      - go fmt ./...
+
+  upgrade:
+    desc: Upgrade dependencies, modernize, format, tidy and verify modules
+    cmds:
+      - go get -u ./...
+      - task: format
+      - go mod tidy
+      - go mod verify
+
+  build:
+    desc: Build the geocode binary in dist
+    env:
+      CGO_ENABLED: '0'
+    cmds:
+      - go build -trimpath -o dist/ ./cmd/geocode
+
+  test:
+    desc: Run all tests (no external dataset needed)
+    cmds: [go test ./...]
+
+  test:race:
+    desc: Run race tests; optionally set CGO_DIR to an LLVM installation
+    env:
+      CGO_ENABLED: '1'
+      CC: '{{if .CGO_DIR}}{{.CGO_DIR}}/bin/clang{{if eq OS "windows"}}.exe{{end}}{{else}}{{default "cc" .CC}}{{end}}'
+      CXX: '{{if .CGO_DIR}}{{.CGO_DIR}}/bin/clang++{{if eq OS "windows"}}.exe{{end}}{{else}}{{default "c++" .CXX}}{{end}}'
+      PATH: '{{if .CGO_DIR}}{{.CGO_DIR}}/bin{{if eq OS "windows"}};{{else}}:{{end}}{{end}}{{.PATH}}'
+    cmds: [go test -race -count=1 ./...]
+
+  test:cover:
+    desc: Run tests with coverage
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  bench:
+    desc: Benchmark synthetic data, or a database selected by GEOCODE_BENCH_DB
+    cmds:
+      - go test -run '^$' -bench . -benchmem {{.CLI_ARGS}} .
+
+  vet:
+    desc: Run Go static analysis
+    cmds: [go vet ./...]
+
+  lint:
+    desc: Run golangci-lint v2
+    cmds: [golangci-lint run --timeout 5m]
+
+  vuln:
+    desc: Check reachable code for known vulnerabilities
+    cmds: [go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...]
+
+  workflow:check:
+    desc: Validate GitHub Actions with actionlint
+    cmds: [go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/test.yml .github/workflows/release.yml]
+
+  verify:
+    desc: Run race tests, static analysis, vulnerability checks and a static build
+    cmds:
+      - go mod tidy -diff
+      - go mod verify
+      - task: test:race
+      - task: vet
+      - task: lint
+      - task: vuln
+      - task: build
+
+  run:
+    desc: Run geocode, passing arguments after --
+    cmds:
+      - go run ./cmd/geocode {{.CLI_ARGS}}
+
+  docker:build:
+    desc: Build the container image
+    cmds: [docker build -t geocoding-go:dev .]
+
+  docker:up:
+    desc: Start the service; set GEOCODE_DB to your database path
+    cmds: [docker compose up --build -d]
+
+  docker:down:
+    desc: Stop the Docker Compose service
+    cmds: [docker compose down]
+
+  release:check:
+    desc: Validate GoReleaser configuration
+    cmds: [goreleaser check]
+
+  release:snapshot:
+    desc: Build all six release archives without publishing (requires a Git commit)
+    cmds: [goreleaser release --snapshot --clean]
+
+  release:smoke:
+    desc: Build archives and exercise the packaged host binary
+    cmds:
+      - task: release:snapshot
+      - go run ./internal/releasesmoke -dist dist
+
+  release:verify:
+    desc: Run all local checks before tagging a release
+    cmds:
+      - task: verify
+      - task: workflow:check
+      - task: release:check
+      - task: release:smoke
+      - task: docker:build
+
+  tag:
+    desc: Create a local semantic release tag; pass TAG=v1.0.0
+    requires:
+      vars: [TAG]
+    env:
+      GEOCODE_RELEASE_TAG: '{{.TAG}}'
+    preconditions:
+      - sh: '{{if regexMatch .RELEASE_TAG_PATTERN .TAG}}exit 0{{else}}exit 1{{end}}'
+        msg: TAG must be a semantic version, e.g. v1.0.0 or v1.0.0-rc.1
+      - sh: git rev-parse --verify HEAD
+        msg: Initialize and commit the repository before tagging
+      - sh: 'test -z "$(git status --porcelain)"'
+        msg: Working tree must be clean before tagging
+      - sh: 'if git rev-parse -q --verify "refs/tags/$GEOCODE_RELEASE_TAG" >/dev/null 2>&1; then exit 1; fi; exit 0'
+        msg: Tag already exists locally
+    cmds:
+      - git tag -- "$GEOCODE_RELEASE_TAG"
+
+  push-tag:
+    desc: Push an existing tag to GitHub (starts release publishing)
+    requires:
+      vars: [TAG]
+    env:
+      GEOCODE_RELEASE_TAG: '{{.TAG}}'
+    preconditions:
+      - sh: '{{if regexMatch .RELEASE_TAG_PATTERN .TAG}}exit 0{{else}}exit 1{{end}}'
+        msg: TAG must be a semantic version
+      - sh: git rev-parse --verify "refs/tags/$GEOCODE_RELEASE_TAG"
+        msg: Tag does not exist locally; run task tag first
+    cmds:
+      - git push origin "refs/tags/$GEOCODE_RELEASE_TAG"
+
+  release-tag:
+    desc: Create and push a release tag; run release:verify first
+    requires:
+      vars: [TAG]
+    cmds:
+      - task: tag
+      - task: push-tag

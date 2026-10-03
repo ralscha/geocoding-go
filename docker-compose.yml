@@ -1,0 +1,18 @@
+services:
+  geocode:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - type: bind
+        source: ${GEOCODE_DB:-./data/geocode.db}
+        target: /data/geocode.db
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 15s

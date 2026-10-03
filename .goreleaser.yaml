@@ -1,0 +1,49 @@
+version: 2
+
+project_name: geocoding-go
+
+before:
+  hooks:
+    - go run ./internal/releaselicenses -out .cache/release/NOTICE.txt
+
+builds:
+  - id: geocode
+    main: ./cmd/geocode
+    binary: geocode
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X main.version={{ .Version }}
+        -X main.commit={{ .Commit }}
+        -X main.date={{ .Date }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: binaries
+    ids: [geocode]
+    formats: [tar.gz]
+    name_template: 'geocoding-go_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - src: .cache/release/NOTICE.txt
+        strip_parent: true
+      - README.md
+      - ARCHITECTURE.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+release:
+  prerelease: auto
+
+changelog:
+  sort: asc
