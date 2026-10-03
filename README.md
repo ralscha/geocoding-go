@@ -5,14 +5,13 @@
 
 Offline forward and reverse geocoding from OpenStreetMap PBF snapshots. Includes
 a Go library, an import/query CLI, an HTTP service, and a custom immutable
-memory-mapped database. Tested with a full Switzerland extract.
+memory-mapped database.
 
 ## Install
 
 Download an archive from [GitHub Releases](https://github.com/ralscha/geocoding-go/releases)
 for Linux, macOS, or Windows, on amd64 or arm64. Releases include SHA-256 hashes in
-`checksums.txt`. Extract `geocode` (`geocode.exe` on Windows) and the license
-notices together. The binary needs no Go toolchain, C runtime, or database server.
+`checksums.txt`. Extract `geocode` (`geocode.exe` on Windows).
 
 To build from source, use the Go version in `go.mod`:
 
@@ -28,26 +27,86 @@ No OSM extract or database is distributed with the software. Download an
 `.osm.pbf` snapshot, for example from [Geofabrik](https://download.geofabrik.de/),
 then import it once before querying.
 
-## Run
+## Run on Linux with the release binary
 
-Requires a 64-bit Go toolchain matching `go.mod`. Runtime queries need only the
-database file; the PBF and temporary node files are not needed after import.
+The release binary runs directly on 64-bit Linux. You do not need Go, a C
+compiler, or a separate database server.
+
+### Download and extract
+
+Download the Linux archive and `checksums.txt` from the same
+[GitHub release](https://github.com/ralscha/geocoding-go/releases). Choose the
+architecture reported by `uname -m`:
+
+| `uname -m` | Release archive suffix |
+| --- | --- |
+| `x86_64` | `linux_amd64.tar.gz` |
+| `aarch64` or `arm64` | `linux_arm64.tar.gz` |
+
+Put both downloads in a new directory and open a terminal there. Replace
+`1.0.0` and `amd64` below with the version and architecture you downloaded:
 
 ```sh
-go test ./...
-go build -trimpath -o bin/ ./cmd/geocode
-
-# Choose a new output filename for each import.
-go run ./cmd/geocode import -pbf switzerland-latest.osm.pbf -db switzerland.db
-
-go run ./cmd/geocode search -db switzerland.db -q "Bahnhofstrasse 10 Zurich" -limit 3
-go run ./cmd/geocode reverse -db switzerland.db -lat 47.3769 -lon 8.5417
-go run ./cmd/geocode stats -db switzerland.db -verify
-go run ./cmd/geocode serve -db switzerland.db -addr 127.0.0.1:8080
+sha256sum --check --ignore-missing checksums.txt
 ```
 
-If you already have `switzerland.db`, skip the import command. Database files,
-binaries, and input extracts are ignored by Git.
+Continue only if the downloaded archive reports `OK`. Missing archives for
+other platforms are ignored. Then extract the archive and check the binary:
+
+```sh
+tar -xzf geocoding-go_1.0.0_linux_amd64.tar.gz
+./geocode --version
+```
+
+The following commands run from this directory. `./geocode` uses the extracted
+binary without installing it into your `PATH`. Keep the included license files
+with it.
+
+### Import an OSM snapshot
+
+Download a regional PBF and import it once. For example, for Switzerland:
+
+```sh
+curl -fLO https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
+
+# Choose a new output filename for each import.
+./geocode import -pbf switzerland-latest.osm.pbf -db switzerland.db
+./geocode stats -db switzerland.db -verify
+```
+
+If you already have a compatible `switzerland.db`, skip the download and import.
+Runtime queries need only the database file; the PBF and temporary node files
+are not needed after import. No dataset is bundled in the release archive.
+
+### Query from the terminal
+
+```sh
+./geocode search -db switzerland.db -q "Bahnhofstrasse 10 Zurich" -limit 3
+./geocode reverse -db switzerland.db -lat 47.3769 -lon 8.5417
+```
+
+Both commands print JSON. Add `-class address` to a reverse query to restrict
+results to address features. Run `./geocode <command> -h` for all options.
+
+### Run the HTTP server
+
+```sh
+./geocode serve -db switzerland.db -addr 127.0.0.1:8080
+```
+
+The server stays in the foreground. In another terminal, try:
+
+```sh
+curl http://127.0.0.1:8080/health
+curl --get http://127.0.0.1:8080/search \
+  --data-urlencode 'q=Bahnhofstrasse 10 Zurich' --data-urlencode 'limit=3'
+curl 'http://127.0.0.1:8080/reverse?lat=47.3769&lon=8.5417&class=address'
+```
+
+Press **Ctrl+C** to shut down gracefully. The example listens only on the local
+machine; use `-addr 0.0.0.0:8080` to listen on all network interfaces.
+
+### Import options and database updates
 
 Import options: `-workers` (defaults to up to 8), `-temp` for temporary disk
 storage, `-country` and `-country-code` for explicit country fallbacks, and
@@ -62,6 +121,19 @@ Imports refuse to replace an existing file. Build a new snapshot, validate it,
 then restart the service with the new path. Files are flushed and published with
 an atomic hard link; the output filesystem must support hard links. Never modify
 or truncate a mapped database. Queries are read-only and safe to run concurrently.
+
+### Build from source instead
+
+From a source checkout, use a 64-bit Go toolchain matching `go.mod`:
+
+```sh
+go test ./...
+go build -trimpath -o bin/geocode ./cmd/geocode
+./bin/geocode --version
+```
+
+Use `./bin/geocode` in place of `./geocode` in the commands above. Database files,
+binaries, and input extracts are ignored by Git.
 
 ## HTTP
 
