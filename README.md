@@ -74,9 +74,8 @@ curl -fLO https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
 ./geocode stats -db switzerland.db -verify
 ```
 
-If you already have a compatible `switzerland.db`, skip the download and import.
 Runtime queries need only the database file; the PBF and temporary node files
-are not needed after import. No dataset is bundled in the release archive.
+are not needed after import.
 
 ### Query from the terminal
 
