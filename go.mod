@@ -6,7 +6,7 @@ require (
 	github.com/edsrzf/mmap-go v1.2.0
 	github.com/paulmach/osm v0.9.0
 	github.com/paulmach/protoscan v0.2.1
-	golang.org/x/text v0.42.0
+	golang.org/x/text v0.43.0
 	google.golang.org/protobuf v1.36.12
 )
 
