@@ -146,7 +146,11 @@ func (db *DB) validate() error {
 		if !fits(le.Uint64(r[56:]), uint64(le.Uint32(r[52:])), uint64(len(db.sections[sMetadata]))) || !fits(le.Uint64(r[40:]), uint64(le.Uint32(r[48:])), uint64(len(db.sections[sGeometry]))) {
 			return corrupt("record offsets")
 		}
-		if !validPoint(recordPoint(r)) || !validBox(readBox(r[24:])) || math.IsNaN(float64(math.Float32frombits(le.Uint32(r[12:])))) {
+		importance := math.Float32frombits(le.Uint32(r[12:]))
+		if math.IsNaN(float64(importance)) || importance < 0 || importance > 1 {
+			return corrupt("record importance")
+		}
+		if !validPoint(recordPoint(r)) || !validBox(readBox(r[24:])) {
 			return corrupt("record coordinates")
 		}
 		if r[8] > 2 || le.Uint32(r[52:]) != metadataSize {
@@ -341,8 +345,8 @@ func (db *DB) posting(i int) []byte {
 
 type postingEntry struct{ id, weight uint32 }
 
-func featureWeights(f Feature, cache map[string][]string) map[string]uint32 {
-	m := make(map[string]uint32)
+func featureWeights(f Feature, cache map[string][]string, weights map[string]uint32) {
+	clear(weights)
 	add := func(s string, w uint32) {
 		if s == "" {
 			return
@@ -355,7 +359,7 @@ func featureWeights(f Feature, cache map[string][]string) map[string]uint32 {
 			}
 		}
 		for _, t := range tokens {
-			m[t] = max(m[t], w)
+			weights[t] = max(weights[t], w)
 		}
 	}
 	add(f.Name, 12)
@@ -371,7 +375,6 @@ func featureWeights(f Feature, cache map[string][]string) map[string]uint32 {
 	add(a.State, 2)
 	add(a.Country, 1)
 	add(a.CountryCode, 1)
-	return m
 }
 
 // Build writes a complete snapshot using streaming sections and a checksummed
@@ -527,13 +530,15 @@ func BuildContext(ctx context.Context, path string, features []Feature) (err err
 	}
 	index := make(map[string][]postingEntry)
 	tokenCache := make(map[string][]string)
+	weights := make(map[string]uint32)
 	for i, feat := range features {
 		if i%4096 == 0 {
 			if err = checkContext(ctx); err != nil {
 				return err
 			}
 		}
-		for term, weight := range featureWeights(feat, tokenCache) {
+		featureWeights(feat, tokenCache, weights)
+		for term, weight := range weights {
 			index[term] = append(index[term], postingEntry{uint32(i), weight})
 		}
 	}

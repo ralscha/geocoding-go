@@ -2,7 +2,7 @@ package geocode
 
 import (
 	"bytes"
-	"container/heap"
+	"cmp"
 	"context"
 	"errors"
 	"math"
@@ -142,6 +142,7 @@ func (db *DB) Search(ctx context.Context, q string, opts SearchOptions) ([]Resul
 	lists := make([]postingCursor, 0, len(terms))
 	seen := make(map[string]bool, len(terms))
 	nt := len(db.sections[sTerms]) / termSize
+	k := queryLimit(opts.Limit)
 	for ti, t := range terms {
 		if seen[t] {
 			continue
@@ -149,6 +150,8 @@ func (db *DB) Search(ctx context.Context, q string, opts SearchOptions) ([]Resul
 		seen[t] = true
 		idx := sort.Search(nt, func(i int) bool { return bytes.Compare(db.termBytes(i), []byte(t)) >= 0 })
 		var p []byte
+		var df int
+		singleTerm := -1
 		if opts.Prefix && ti == len(terms)-1 && utf8.RuneCountInString(t) >= 2 {
 			var parts [][]byte
 			for i := idx; i < nt && bytes.HasPrefix(db.termBytes(i), []byte(t)); i++ {
@@ -157,36 +160,52 @@ func (db *DB) Search(ctx context.Context, q string, opts SearchOptions) ([]Resul
 				}
 				parts = append(parts, db.posting(i))
 			}
+			var filter []byte
+			if len(parts) > 1 {
+				for _, list := range lists {
+					if filter == nil || len(list.data) < len(filter) {
+						filter = list.data
+					}
+				}
+			}
 			var err error
-			p, err = unionPostings(ctx, parts)
+			p, df, err = unionPostings(ctx, parts, filter)
 			if err != nil {
 				return nil, err
 			}
+			if len(parts) == 1 {
+				singleTerm = idx
+			}
 		} else if idx < nt && bytes.Equal(db.termBytes(idx), []byte(t)) {
 			p = db.posting(idx)
-			if len(terms) == 1 && opts.Near == nil && opts.Bounds == nil {
-				if top := db.topPosting(idx); len(top) > 0 {
-					idf := math.Log1p(float64(db.count) / float64(len(p)/8))
-					best := make(matches, 0, queryLimit(opts.Limit))
-					for j := 0; j < queryLimit(opts.Limit); j++ {
-						id := le.Uint32(top[j*8:])
-						if id >= db.count {
-							return nil, corrupt("top posting feature")
-						}
-						score := float64(le.Uint32(top[j*8+4:]))*idf + float64(math.Float32frombits(le.Uint32(db.record(id)[12:])))*10
-						best = append(best, match{id: id, score: score})
-					}
-					return db.results(best, false)
-				}
-			}
+			df = len(p) / 8
+			singleTerm = idx
 		}
 		if len(p) == 0 {
 			return []Result{}, nil
 		}
-		lists = append(lists, postingCursor{data: p, idf: math.Log1p(float64(db.count) / float64(len(p)/8))})
+		// A prefix that expands to one dictionary term has the same ranking
+		// as an exact lookup and can reuse its precomputed best matches.
+		if singleTerm >= 0 && len(terms) == 1 && opts.Near == nil && opts.Bounds == nil {
+			if top := db.topPosting(singleTerm); len(top) > 0 {
+				idf := math.Log1p(float64(db.count) / float64(df))
+				best := make(matches, 0, k)
+				for j := 0; j < k; j++ {
+					id := le.Uint32(top[j*8:])
+					if id >= db.count {
+						return nil, corrupt("top posting feature")
+					}
+					score := float64(le.Uint32(top[j*8+4:]))*idf + float64(math.Float32frombits(le.Uint32(db.record(id)[12:])))*10
+					best = append(best, match{id: id, score: score})
+				}
+				return db.results(best, false)
+			}
+		}
+		lists = append(lists, postingCursor{data: p, idf: math.Log1p(float64(db.count) / float64(df))})
 	}
-	slices.SortFunc(lists, func(a, b postingCursor) int { return len(a.data) - len(b.data) })
-	k := queryLimit(opts.Limit)
+	// Keep the original frequency order even when a prefix buffer was filtered;
+	// this preserves the order of floating-point additions in result scores.
+	slices.SortFunc(lists, func(a, b postingCursor) int { return cmp.Compare(b.idf, a.idf) })
 	best := make(matches, 0, k)
 	base := lists[0]
 	steps := 0
@@ -246,56 +265,104 @@ candidates:
 type unionPart struct {
 	data []byte
 	pos  int
+	id   uint32
 }
 type unionHeap []unionPart
 
-func (h unionHeap) Len() int { return len(h) }
-func (h unionHeap) Less(i, j int) bool {
-	return le.Uint32(h[i].data[h[i].pos:]) < le.Uint32(h[j].data[h[j].pos:])
-}
-func (h unionHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-func (h *unionHeap) Push(v any)   { *h = append(*h, v.(unionPart)) }
-func (h *unionHeap) Pop() any     { a := *h; v := a[len(a)-1]; *h = a[:len(a)-1]; return v }
-func unionPostings(ctx context.Context, parts [][]byte) ([]byte, error) {
-	if len(parts) == 0 {
-		return nil, nil
+func (h unionHeap) down(i int) {
+	p := h[i]
+	for {
+		child := i*2 + 1
+		if child >= len(h) {
+			break
+		}
+		if child+1 < len(h) && h[child+1].id < h[child].id {
+			child++
+		}
+		if p.id <= h[child].id {
+			break
+		}
+		h[i] = h[child]
+		i = child
 	}
-	if len(parts) == 1 {
-		return parts[0], nil
+	h[i] = p
+}
+
+// unionPostings counts all distinct feature IDs for exact IDF scoring. When a
+// filter is supplied, it only materializes IDs present in that exact-token list.
+func unionPostings(ctx context.Context, parts [][]byte, filter []byte) ([]byte, int, error) {
+	if len(parts) == 0 {
+		return nil, 0, nil
+	}
+	if len(parts) == 1 && filter == nil {
+		return parts[0], len(parts[0]) / 8, nil
 	}
 	h := make(unionHeap, 0, len(parts))
+	capacity := 0
 	for _, p := range parts {
 		if len(p) > 0 {
-			h = append(h, unionPart{data: p})
+			h = append(h, unionPart{data: p, id: le.Uint32(p)})
+			capacity = max(capacity, len(p))
 		}
 	}
-	heap.Init(&h)
-	var out []byte
+	for i := len(h)/2 - 1; i >= 0; i-- {
+		h.down(i)
+	}
+	if filter != nil {
+		capacity = min(capacity, len(filter))
+	}
+	out := make([]byte, 0, capacity)
+	cursor := postingCursor{data: filter}
+	var previous uint32
+	count := 0
+	emit := false
 	steps := 0
 	for len(h) > 0 {
 		if steps%4096 == 0 {
 			if err := checkContext(ctx); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 		steps++
 		p := &h[0]
-		id, w := le.Uint32(p.data[p.pos:]), le.Uint32(p.data[p.pos+4:])
-		if len(out) > 0 && le.Uint32(out[len(out)-8:]) == id {
-			w = max(w, le.Uint32(out[len(out)-4:]))
-			le.PutUint32(out[len(out)-4:], w)
-		} else {
-			out = le.AppendUint32(out, id)
-			out = le.AppendUint32(out, w)
+		id, w := p.id, le.Uint32(p.data[p.pos+4:])
+		if count == 0 || id != previous {
+			count++
+			previous = id
+			emit = true
+			if filter != nil {
+				_, emit = cursor.seek(id)
+			}
+			if emit {
+				if len(out) == cap(out) {
+					// Large unions otherwise grow in small increments, repeatedly
+					// copying their accumulated postings. Doubling bounds that work.
+					capacity := max(8, 2*cap(out))
+					if filter != nil {
+						capacity = min(capacity, len(filter))
+					}
+					grown := make([]byte, len(out), capacity)
+					copy(grown, out)
+					out = grown
+				}
+				out = le.AppendUint32(out, id)
+				out = le.AppendUint32(out, w)
+			}
+		} else if emit {
+			le.PutUint32(out[len(out)-4:], max(w, le.Uint32(out[len(out)-4:])))
 		}
 		p.pos += 8
 		if p.pos == len(p.data) {
-			heap.Pop(&h)
+			h[0] = h[len(h)-1]
+			h = h[:len(h)-1]
 		} else {
-			heap.Fix(&h, 0)
+			p.id = le.Uint32(p.data[p.pos:])
+		}
+		if len(h) > 0 {
+			h.down(0)
 		}
 	}
-	return out, nil
+	return out, count, nil
 }
 func (db *DB) results(best matches, reverse bool) ([]Result, error) {
 	slices.SortFunc(best, compareMatches)

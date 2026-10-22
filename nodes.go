@@ -74,12 +74,19 @@ func (c *nodeCollector) flush() error {
 	c.buf = c.buf[:0]
 	return nil
 }
-func writeNode(w io.Writer, v nodeEntry) error {
-	var b [16]byte
-	le.PutUint64(b[:], uint64(v.id))
-	le.PutUint32(b[8:], uint32(v.lat))
-	le.PutUint32(b[12:], uint32(v.lon))
-	_, e := w.Write(b[:])
+func writeNode(w *bufio.Writer, v nodeEntry) error {
+	if w.Available() < 16 {
+		if err := w.Flush(); err != nil {
+			return err
+		}
+	}
+	// Encode into the writer's spare capacity instead of allocating a temporary
+	// record for every imported node.
+	b := w.AvailableBuffer()
+	b = le.AppendUint64(b, uint64(v.id))
+	b = le.AppendUint32(b, uint32(v.lat))
+	b = le.AppendUint32(b, uint32(v.lon))
+	_, e := w.Write(b)
 	return e
 }
 
@@ -94,10 +101,20 @@ func (h nodeHeap) Less(i, j int) bool { return h[i].entry.id < h[j].entry.id }
 func (h nodeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 func (h *nodeHeap) Push(v any)        { *h = append(*h, v.(nodeMerge)) }
 func (h *nodeHeap) Pop() any          { a := *h; v := a[len(a)-1]; *h = a[:len(a)-1]; return v }
-func readNode(r io.Reader) (nodeEntry, error) {
-	var b [16]byte
-	_, e := io.ReadFull(r, b[:])
-	return nodeEntry{int64(le.Uint64(b[:])), int32(le.Uint32(b[8:])), int32(le.Uint32(b[12:]))}, e
+func readNode(r *bufio.Reader) (nodeEntry, error) {
+	b, err := r.Peek(16)
+	if err != nil {
+		if len(b) > 0 {
+			_, _ = r.Discard(len(b))
+			if err == io.EOF {
+				err = io.ErrUnexpectedEOF
+			}
+		}
+		return nodeEntry{}, err
+	}
+	v := nodeEntry{int64(le.Uint64(b)), int32(le.Uint32(b[8:])), int32(le.Uint32(b[12:]))}
+	_, err = r.Discard(16)
+	return v, err
 }
 func (c *nodeCollector) finish() (*nodeIndex, error) {
 	if e := c.flush(); e != nil {

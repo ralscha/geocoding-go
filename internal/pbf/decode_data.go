@@ -57,7 +57,7 @@ func (dec *dataDecoder) Decode(blob *osmpbf.Blob) (objects []osm.Object, decodeE
 			decodeErr = fmt.Errorf("osmpbf: malformed primitive block: %v", v)
 		}
 	}()
-	dec.q = make([]osm.Object, 0, 8000) // typical PrimitiveBlock contains 8k OSM entities
+	dec.q = nil
 
 	var err error
 	dec.data, err = getData(blob, dec.data)
@@ -70,6 +70,16 @@ func (dec *dataDecoder) Decode(blob *osmpbf.Blob) (objects []osm.Object, decodeE
 		return nil, err
 	}
 	return dec.q, nil
+}
+
+func (dec *dataDecoder) appendObject(object osm.Object) {
+	if dec.q == nil {
+		// A typical populated PrimitiveBlock contains 8k OSM entities. Delay
+		// this allocation until an object is retained: import passes skip most
+		// blocks entirely, and filters may reject every object in a group.
+		dec.q = make([]osm.Object, 0, 8000)
+	}
+	dec.q = append(dec.q, object)
 }
 
 func (dec *dataDecoder) scanPrimitiveBlock(data []byte) error {
@@ -157,8 +167,8 @@ func (dec *dataDecoder) scanPrimitiveBlock(data []byte) error {
 func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
 	msg := protoscan.New(data)
 
-	way := &osm.Way{Visible: true}
-	relation := &osm.Relation{Visible: true}
+	var way *osm.Way
+	var relation *osm.Relation
 
 	for msg.Next() {
 		fn := msg.FieldNumber()
@@ -199,8 +209,8 @@ func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
 			}
 
 			if dec.scanner.FilterWay == nil || dec.scanner.FilterWay(way) {
-				dec.q = append(dec.q, way)
-				way = &osm.Way{Visible: true}
+				dec.appendObject(way)
+				way = nil
 			} else {
 				tags := way.Tags
 				nodes := way.Nodes
@@ -222,8 +232,8 @@ func (dec *dataDecoder) scanPrimitiveGroup(data []byte) error {
 			}
 
 			if dec.scanner.FilterRelation == nil || dec.scanner.FilterRelation(relation) {
-				dec.q = append(dec.q, relation)
-				relation = &osm.Relation{Visible: true}
+				dec.appendObject(relation)
+				relation = nil
 			} else {
 				tags := relation.Tags
 				members := relation.Members
@@ -264,7 +274,7 @@ func (dec *dataDecoder) scanNode(data []byte) error {
 		n.Tags = append(n.Tags, osm.Tag{Key: st[k], Value: st[v]})
 	}
 	if dec.scanner.FilterNode == nil || dec.scanner.FilterNode(n) {
-		dec.q = append(dec.q, n)
+		dec.appendObject(n)
 	}
 	return nil
 }
@@ -537,7 +547,7 @@ func (dec *dataDecoder) extractDenseNodes() error {
 		}
 
 		if dec.scanner.FilterNode == nil || dec.scanner.FilterNode(n) {
-			dec.q = append(dec.q, n)
+			dec.appendObject(n)
 			n = &osm.Node{Visible: true}
 		} else {
 			// skip unwanted nodes

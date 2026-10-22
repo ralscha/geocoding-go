@@ -27,6 +27,10 @@ func featureBox(f Feature) box {
 				b.east = 1800000000
 			}
 		}
+		if f.Polygon && len(path) > 1 && math.Abs(path[len(path)-1].Lon-path[0].Lon) > 180 {
+			b.west = -1800000000
+			b.east = 1800000000
+		}
 	}
 	return b
 }
@@ -44,8 +48,13 @@ func wrap(x float64) float64 {
 	return math.Remainder(x, 360)
 }
 func haversine(a, b Point) float64 {
+	return haversineWithCos(a, b, math.Cos(radians(a.Lat)))
+}
+
+// Geometry scans reuse the query latitude's cosine across all segments.
+func haversineWithCos(a, b Point, cosLat float64) float64 {
 	x, y := radians(b.Lat-a.Lat)/2, radians(wrap(b.Lon-a.Lon))/2
-	h := math.Sin(x)*math.Sin(x) + math.Cos(radians(a.Lat))*math.Cos(radians(b.Lat))*math.Sin(y)*math.Sin(y)
+	h := math.Sin(x)*math.Sin(x) + cosLat*math.Cos(radians(b.Lat))*math.Sin(y)*math.Sin(y)
 	return 2 * earthRadius * math.Asin(math.Sqrt(min(1, max(0, h))))
 }
 
@@ -103,6 +112,10 @@ func (q queryMetric) lowerBound(b box) float64 {
 // OSM segment, then measures its spherical distance. Segments interpolate in
 // latitude/longitude (not great-circle arcs), matching stored bounding boxes.
 func segmentDistance(p, a, b Point) float64 {
+	return segmentDistanceWithCos(p, a, b, math.Cos(radians(p.Lat)))
+}
+
+func segmentDistanceWithCos(p, a, b Point, cosLat float64) float64 {
 	ax, bx := wrap(a.Lon-p.Lon), wrap(b.Lon-p.Lon)
 	if math.Abs(bx-ax) > 180 {
 		if bx < ax {
@@ -111,14 +124,13 @@ func segmentDistance(p, a, b Point) float64 {
 			ax += 360
 		}
 	}
-	c := math.Cos(radians(p.Lat))
-	dx, dy := (bx-ax)*c, b.Lat-a.Lat
+	dx, dy := (bx-ax)*cosLat, b.Lat-a.Lat
 	t := 0.0
 	if d := dx*dx + dy*dy; d > 0 {
-		t = max(0, min(1, -(ax*c*dx+(a.Lat-p.Lat)*dy)/d))
+		t = max(0, min(1, -(ax*cosLat*dx+(a.Lat-p.Lat)*dy)/d))
 	}
 	q := Point{Lat: a.Lat + t*(b.Lat-a.Lat), Lon: wrap(p.Lon + ax + t*(bx-ax))}
-	return min(haversine(p, q), min(haversine(p, a), haversine(p, b)))
+	return min(haversineWithCos(p, q, cosLat), min(haversineWithCos(p, a, cosLat), haversineWithCos(p, b, cosLat)))
 }
 
 func insideRing(p Point, ring []Point) bool {
@@ -145,6 +157,9 @@ func geometryDistance(p Point, f Feature) float64 {
 		}
 		for i := 1; i < len(path); i++ {
 			d = min(d, segmentDistance(p, path[i-1], path[i]))
+		}
+		if f.Polygon && len(path) > 1 && path[len(path)-1] != path[0] {
+			d = min(d, segmentDistance(p, path[len(path)-1], path[0]))
 		}
 	}
 	if inside {

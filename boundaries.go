@@ -93,8 +93,8 @@ func ringsLabel(rings [][]Point, lat float64) Point {
 	ref := rings[0][0].Lon
 	var crossings []float64
 	for _, p := range rings {
-		for i := 1; i < len(p); i++ {
-			a, b := p[i-1], p[i]
+		for i, j := 0, len(p)-1; i < len(p); j, i = i, i+1 {
+			a, b := p[j], p[i]
 			if (a.Lat > lat) != (b.Lat > lat) {
 				ax, bx := wrap(a.Lon-ref), wrap(b.Lon-ref)
 				crossings = append(crossings, ax+(bx-ax)*(lat-a.Lat)/(b.Lat-a.Lat))
@@ -135,8 +135,8 @@ func prepareBoundary(id int, f Feature) preparedBoundary {
 		if len(r) == 0 {
 			continue
 		}
-		for i := 1; i < len(r); i++ {
-			a, b := r[i-1], r[i]
+		for i, j := 0, len(r)-1; i < len(r); j, i = i, i+1 {
+			a, b := r[j], r[i]
 			if a.Lat == b.Lat {
 				continue
 			}

@@ -39,30 +39,40 @@ durability after sudden power loss depends on the host filesystem.
 
 ## Forward queries
 
-The dictionary is binary searched after Unicode normalization. Posting lists are
-intersected from rarest to most common, using monotonic galloping cursors. A miss
-advances the leading cursor to the next possible intersection. Scoring combines
+The dictionary is binary searched after Unicode normalization. ASCII input uses a
+fast path that avoids decomposition and returns already normalized text without
+allocating. Posting lists are intersected from rarest to most common, using
+monotonic galloping cursors. A miss advances the leading cursor to the next
+possible intersection. Scoring combines
 field weights and inverse document frequency with stored importance. A bounded
 typed heap retains the best requested results without interface boxing. Filters and proximity bias are evaluated
 before retention. Common single-token queries without geographic filters use the
-precomputed ranking, which is equivalent to scanning the full list. Prefix
-queries merge matching sorted lists and retain the maximum field weight per
-document before intersection. There is no silent candidate-count cutoff.
+precomputed ranking, which is equivalent to scanning the full list. This also
+applies to a single-token prefix expanding to exactly one dictionary term. Prefix
+queries use a typed merge heap and retain the maximum field weight per document.
+When an exact token is also present, the prefix buffer retains only candidates
+from the shortest exact-token list. The merge still counts every distinct prefix
+match so inverse document frequency and ranking remain unchanged. There is no
+silent candidate-count cutoff.
 
 ## Reverse queries
 
 A best-first traversal visits spatial nodes by conservative spherical distance
 to their bounding boxes. The current kth result tightens the search radius.
-Candidates read geometry directly from mapped bytes. Cheap latitude and
+Candidates read geometry directly from mapped bytes. Polygon rings are implicitly
+closed for containment, edge distances, and bounding boxes. Cheap latitude and
 longitude lower bounds discard distant line segments before trigonometric work;
 polygon crossing checks continue so containment is preserved. Latitude rejection
-precedes longitude calculations, and crossing tests calculate longitude only
+uses a conservative window before decoding segment longitudes. Crossing tests
+calculate longitude only
 for segments that straddle the query latitude. Query trigonometric values are
 computed once; bounds containing the query longitude use a direct latitude
 distance. Haversine-based corner bounds avoid precision loss at short distances.
 Dateline-crossing segments get conservative longitude bounds. A typed heap avoids
-boxing each spatial visit. Class filters compare the mapped class field directly;
-full metadata is decoded only for returned results. All query state is local;
+boxing each spatial visit, and a stack buffer handles small traversal queues.
+Geometry scans reuse the query latitude cosine across their segments.
+Class filters compare the mapped class field directly; full metadata is decoded
+only for returned results. All query state is local;
 a shared read lock coordinates mapping lifetime
 with `Close`, while queries execute concurrently.
 
@@ -71,14 +81,17 @@ with `Close`, while queries execute concurrently.
 Three PBF passes collect relevant relation memberships, all node coordinates,
 then selected way geometries. Parallel PBF decoders preserve input order. Node
 coordinates use sorted 16-byte external runs with a one-million-node buffer;
-unordered runs are merged. A sparse fence index every 256 nodes narrows binary
+unordered runs are merged. Records are encoded and decoded directly in buffered
+I/O storage, without allocating a temporary record per node. A sparse fence
+index every 256 nodes narrows binary
 searches in the temporary mapped coordinate file. Duplicate node IDs are rejected.
 
 Relations are stitched by matching endpoint node IDs. Ambiguous, incomplete, and
 nested relations are counted and skipped. Polygon context is attached using a
 separate in-memory spatial tree and prepared crossing buckets. Feature geometry
 and metadata remain in RAM until the snapshot is built. Tokenization is cached
-for up to 500,000 distinct strings during text-index construction.
+for up to 500,000 distinct strings during text-index construction, and the builder
+reuses a cleared token-weight map between features.
 
 ## Validation
 

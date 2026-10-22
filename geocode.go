@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -34,8 +35,9 @@ type Address struct {
 	CountryCode string `json:"country_code,omitempty"`
 }
 
-// Feature is the import representation. Geometry paths are lines, or closed
-// rings when Polygon is true. Polygon rings use even/odd fill (including holes).
+// Feature is the import representation. Geometry paths are lines, or polygon
+// rings when Polygon is true. Rings are implicitly closed and use even/odd fill
+// (including holes).
 type Feature struct {
 	OSMID      int64     `json:"osm_id"`
 	OSMType    string    `json:"osm_type"`
@@ -105,14 +107,18 @@ func checkContext(ctx context.Context) error {
 
 func displayName(f Feature) string {
 	a := f.Address
-	street := strings.TrimSpace(a.Street + " " + a.HouseNumber)
+	street := a.Street
+	if street == "" {
+		street = a.HouseNumber
+	} else if a.HouseNumber != "" {
+		street += " " + a.HouseNumber
+	}
+	street = strings.TrimSpace(street)
 	parts := []string{f.Name, street, a.Postcode, a.City, a.County, a.State, a.Country}
-	seen := make(map[string]bool, len(parts))
 	out := parts[:0]
 	for _, p := range parts {
-		if p != "" && !seen[p] {
+		if p != "" && !slices.Contains(out, p) {
 			out = append(out, p)
-			seen[p] = true
 		}
 	}
 	return strings.Join(out, ", ")

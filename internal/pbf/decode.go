@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/paulmach/osm"
@@ -105,6 +106,9 @@ func (dec *decoder) Close() error {
 
 // Start decoding process using n goroutines.
 func (dec *decoder) Start(n int) error {
+	if err := dec.ctx.Err(); err != nil {
+		return err
+	}
 	if n < 1 {
 		n = 1
 	}
@@ -154,7 +158,20 @@ func (dec *decoder) Start(n int) error {
 			defer close(output)
 			defer dec.wg.Done()
 
-			for p := range input {
+			for {
+				var p iPair
+				select {
+				case <-dec.ctx.Done():
+					return
+				case next, ok := <-input:
+					if !ok {
+						return
+					}
+					p = next
+				}
+				if dec.ctx.Err() != nil {
+					return
+				}
 				var out oPair
 				if p.Err == nil {
 					// send decoded objects or decoding error
@@ -167,6 +184,7 @@ func (dec *decoder) Start(n int) error {
 				select {
 				case output <- out:
 				case <-dec.ctx.Done():
+					return
 				}
 			}
 		}()
@@ -192,12 +210,16 @@ func (dec *decoder) Start(n int) error {
 		// On restart the first block may not be a header and will need to be
 		// added to the first input.
 		if blobHeader.GetType() != osmHeaderType {
-			dec.inputs[0] <- iPair{Offset: 0, Blob: blob, Err: err}
+			select {
+			case dec.inputs[0] <- iPair{Offset: 0, Blob: blob}:
+			case <-dec.ctx.Done():
+				return
+			}
 
 			i = (i + 1) % n
 		}
 
-		for dec.ctx.Err() == nil || err == nil {
+		for dec.ctx.Err() == nil {
 			input := dec.inputs[i]
 			i = (i + 1) % n
 
@@ -215,6 +237,10 @@ func (dec *decoder) Start(n int) error {
 			select {
 			case input <- pair:
 			case <-dec.ctx.Done():
+				return
+			}
+			if err != nil {
+				return
 			}
 		}
 	}()
@@ -231,16 +257,18 @@ func (dec *decoder) Start(n int) error {
 
 			var p oPair
 			select {
-			case p = <-output:
+			case next, ok := <-output:
+				if !ok {
+					return
+				}
+				p = next
 			case <-dec.ctx.Done():
-				dec.cData.Err = dec.ctx.Err()
 				return
 			}
 
 			select {
 			case dec.serializer <- p:
 			case <-dec.ctx.Done():
-				dec.cData.Err = dec.ctx.Err()
 				return
 			}
 
@@ -258,16 +286,21 @@ func (dec *decoder) Start(n int) error {
 // data, or error encountered. The end of the input stream is reported by an io.EOF error.
 func (dec *decoder) Next() (osm.Object, error) {
 	for dec.cIndex >= len(dec.cData.Objects) {
+		if dec.cData.Err != nil {
+			return nil, dec.cData.Err
+		}
 		cd, ok := <-dec.serializer
-		if !ok || cd.Err == io.EOF {
-			if dec.cData.Err != nil {
-				return nil, dec.cData.Err
+		if !ok {
+			if err := dec.ctx.Err(); err != nil {
+				return nil, err
 			}
 			return nil, io.EOF
 		}
 
-		dec.pOffset = dec.cOffset
-		dec.cOffset = cd.Offset
+		if cd.Err == nil {
+			atomic.StoreInt64(&dec.pOffset, atomic.LoadInt64(&dec.cOffset))
+			atomic.StoreInt64(&dec.cOffset, cd.Offset)
+		}
 		dec.cData = cd
 		dec.cIndex = 0
 	}
