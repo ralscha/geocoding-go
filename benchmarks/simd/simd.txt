@@ -1,0 +1,114 @@
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 1208259	       306.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  331335	      1049 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1000000	       313.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   37291	      8402 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  368478	       976.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	   10000	     31033 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   38821	      9244 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     355	   1462060 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5754	     62325 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   37545	      9603 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   33591	     10573 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  155451	      2144 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   76934	      4961 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   72519	      4802 ns/op	     375 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 2125159	       168.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  327662	      1084 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1000000	       326.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   43039	      8529 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  353463	       960.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	   10000	     31950 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   37231	     10110 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     310	   1677266 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5791	     63913 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   36246	     10011 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   32335	     11591 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  178586	      2403 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   55215	      8768 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   73881	      5026 ns/op	     375 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 1996545	       179.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  303697	      1111 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1103778	       331.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   41817	      8136 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  379202	      1006 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	   10000	     31482 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   40027	      9392 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     348	   1007514 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5808	     62629 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   38116	      9551 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   33487	     10613 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  178882	      2251 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   76590	      4740 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   74812	      4851 ns/op	     375 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 2151885	       164.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  347994	      1033 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1000000	       332.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   42566	      8514 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  374119	       989.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	    9993	     31202 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   36268	      9508 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     358	   1252034 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5308	     68972 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   33924	      9733 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   33370	     10844 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  180684	      2453 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   74132	      4854 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   76023	      4828 ns/op	     375 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 2026234	       181.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  319585	      1075 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1000000	       327.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   41727	      8666 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  377227	      1004 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	   10000	     32520 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   38352	      9509 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     337	   1049654 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5863	     64512 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   37797	      9612 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   32374	     11020 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  171882	      2345 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   75451	      4956 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   74113	      5040 ns/op	     375 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGeometryWindow/segments=8/cutoff=1000         	 2188444	       166.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8/cutoff=+Inf         	  319188	      1066 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=1000        	 1000000	       321.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=64/cutoff=+Inf        	   23896	     18446 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=1000       	  391167	       967.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=256/cutoff=+Inf       	   10000	     30425 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=1000      	   37119	      9673 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryWindow/segments=8192/cutoff=+Inf      	     356	   1000741 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseLongGeometry                           	    5842	     62220 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line                        	   35862	     10687 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon                     	   34650	     10324 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSearchMixed                                   	  149889	      2221 ns/op	    1378 B/op	      13 allocs/op
+BenchmarkReverseMixed                                  	   75547	      5937 ns/op	     375 B/op	       5 allocs/op
+BenchmarkReverseAddressMixed                           	   70683	      4936 ns/op	     375 B/op	       5 allocs/op
+PASS

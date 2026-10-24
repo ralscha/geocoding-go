@@ -1,0 +1,48 @@
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5146	     71460 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   15843	     23160 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   15740	     23001 ns/op	       0 B/op	       0 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5104	     71057 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   16303	     22014 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   15133	     23857 ns/op	       0 B/op	       0 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5103	     72369 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   17114	     21596 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   16077	     22181 ns/op	       0 B/op	       0 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5236	     71300 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   16654	     21300 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   15414	     23403 ns/op	       0 B/op	       0 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5235	     69954 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   16701	     22058 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   15082	     24363 ns/op	       0 B/op	       0 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReverseLongGeometry 	    5086	     71671 ns/op	     312 B/op	       3 allocs/op
+BenchmarkGeometryTraversal/line         	   15193	     23183 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGeometryTraversal/polygon      	   15264	     24059 ns/op	       0 B/op	       0 allocs/op
+PASS

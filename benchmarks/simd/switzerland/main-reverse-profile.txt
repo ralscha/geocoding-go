@@ -1,0 +1,21 @@
+File: switzerland-main.test.exe
+Build ID: C:\w\ws\github\geocoding-go\.cache\switzerland-main.test.exe2026-10-24 13:28:08.8727997 +0200 CEST
+Type: cpu
+Time: 2026-10-24 13:33:42 CEST
+Duration: 2.54s, Total samples = 2490ms (97.90%)
+Showing nodes accounting for 2310ms, 92.77% of 2490ms total
+Dropped 31 nodes (cum <= 12.45ms)
+Showing top 12 nodes out of 40
+      flat  flat%   sum%        cum   cum%
+    1450ms 58.23% 58.23%     1660ms 66.67%  github.com/ralscha/geocoding-go.(*DB).distanceWithin
+     180ms  7.23% 65.46%     2330ms 93.57%  github.com/ralscha/geocoding-go.(*DB).Reverse
+     180ms  7.23% 72.69%      180ms  7.23%  math.xatan (inline)
+     100ms  4.02% 76.71%      100ms  4.02%  encoding/binary.littleEndian.Uint32 (inline)
+      80ms  3.21% 79.92%       80ms  3.21%  math.Sincos
+      60ms  2.41% 82.33%      250ms 10.04%  math.asin
+      50ms  2.01% 84.34%      300ms 12.05%  math.Asin (inline)
+      50ms  2.01% 86.35%       60ms  2.41%  math.sin
+      40ms  1.61% 87.95%       40ms  1.61%  encoding/binary.littleEndian.Uint64
+      40ms  1.61% 89.56%       90ms  3.61%  github.com/ralscha/geocoding-go.(*DB).treeNode (inline)
+      40ms  1.61% 91.16%      380ms 15.26%  github.com/ralscha/geocoding-go.queryMetric.lowerBound
+      40ms  1.61% 92.77%       40ms  1.61%  runtime.cgocall

@@ -63,6 +63,17 @@ jobs:
         env:
           CGO_ENABLED: '0'
         run: go test -count=1 ./...
+      - name: Test experimental SIMD
+        env:
+          CGO_ENABLED: '0'
+          GOEXPERIMENT: simd
+        run: go test -count=1 ./...
+      - name: Test SIMD scalar fallback
+        env:
+          CGO_ENABLED: '0'
+          GOEXPERIMENT: simd
+          GODEBUG: simd=0
+        run: go test -count=1 ./...
       - name: Build snapshot archives
         uses: goreleaser/goreleaser-action@v7
         with:

@@ -1,0 +1,28 @@
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+                          │ benchmarks/simd/main.txt │     benchmarks/simd/main-simd.txt     │    benchmarks/simd/default.txt    │
+                          │          sec/op          │    sec/op      vs base                │   sec/op     vs base              │
+ReverseLongGeometry                      74.10µ ± 6%   109.79µ ± 50%   +48.15% (p=0.009 n=6)   71.38µ ± 2%  -3.67% (p=0.002 n=6)
+GeometryTraversal/line                   22.50µ ± 4%    57.21µ ± 36%  +154.32% (p=0.002 n=6)   22.04µ ± 5%       ~ (p=0.589 n=6)
+GeometryTraversal/polygon                23.33µ ± 3%    49.79µ ± 26%  +113.39% (p=0.002 n=6)   23.63µ ± 6%       ~ (p=0.485 n=6)
+geomean                                  33.88µ         67.88µ        +100.34%                 33.37µ       -1.50%
+
+                          │ benchmarks/simd/main.txt │   benchmarks/simd/main-simd.txt    │    benchmarks/simd/default.txt     │
+                          │           B/op           │    B/op     vs base                │    B/op     vs base                │
+ReverseLongGeometry                     312.0 ± 0%     312.0 ± 0%       ~ (p=1.000 n=6) ¹   312.0 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/line                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/polygon               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+geomean                                            ²               +0.00%               ²               +0.00%               ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean
+
+                          │ benchmarks/simd/main.txt │   benchmarks/simd/main-simd.txt    │    benchmarks/simd/default.txt     │
+                          │        allocs/op         │ allocs/op   vs base                │ allocs/op   vs base                │
+ReverseLongGeometry                     3.000 ± 0%     3.000 ± 0%       ~ (p=1.000 n=6) ¹   3.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/line                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/polygon               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+geomean                                            ²               +0.00%               ²               +0.00%               ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean

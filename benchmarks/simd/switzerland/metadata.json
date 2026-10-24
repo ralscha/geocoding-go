@@ -1,0 +1,68 @@
+{
+    "date":  "2026-10-24",
+    "baseline_commit":  "7a58163",
+    "input":  {
+                  "name":  "switzerland-261023.osm.pbf",
+                  "bytes":  549114239,
+                  "sha256":  "7B0BF1524A29506BE8D04A54E77C042D94F58F3C68AEE5057900D0391CB7B6CD"
+              },
+    "database":  {
+                     "path":  ".cache/switzerland-261023.db",
+                     "sha256":  "9FA2504C8AAEFDC860BBAEB28182004B690DCE76DBFC5807E9B7E81424B2E772",
+                     "verified":  true,
+                     "stats":  {
+                                   "features":  3118248,
+                                   "terms":  231025,
+                                   "bytes":  892913038,
+                                   "spatial_nodes":  524287
+                               }
+                 },
+    "import":  {
+                   "workers":  8,
+                   "cpu_profile_enabled":  true,
+                   "stats":  {
+                                 "nodes":  57535990,
+                                 "ways":  2268537,
+                                 "relations":  12819,
+                                 "features":  3118248,
+                                 "missing_node_ways":  0,
+                                 "incomplete_relations":  440,
+                                 "duration":  33773398700
+                             }
+               },
+    "geometry":  {
+                     "WithGeometry":  2242734,
+                     "LongNonBoundary":  1160,
+                     "LongBoundary":  2149,
+                     "MaxPathVertices":  51928
+                 },
+    "correctness":  {
+                        "mixed_queries":  128,
+                        "long_geometry_queries":  128,
+                        "mixed_snapshot_sha256":  "60B1469F1EBDC633740813C5C1CD4F33C6E1F886CDD5A6BA099574B2D3824CDB",
+                        "mixed_simd_snapshot_sha256":  "60B1469F1EBDC633740813C5C1CD4F33C6E1F886CDD5A6BA099574B2D3824CDB",
+                        "geometry_snapshot_sha256":  "96593D921238CEB8C6D56F7792229040DFC1A0EC7414B6CA086E59709B2874E4",
+                        "geometry_simd_snapshot_sha256":  "96593D921238CEB8C6D56F7792229040DFC1A0EC7414B6CA086E59709B2874E4",
+                        "mixed_fallback_snapshot_sha256":  "60B1469F1EBDC633740813C5C1CD4F33C6E1F886CDD5A6BA099574B2D3824CDB",
+                        "geometry_fallback_snapshot_sha256":  "96593D921238CEB8C6D56F7792229040DFC1A0EC7414B6CA086E59709B2874E4"
+                    },
+    "benchmark":  {
+                      "go":  "1.27.3",
+                      "os":  "windows",
+                      "arch":  "amd64",
+                      "goamd64":  "v1",
+                      "cpu":  "11th Gen Intel Core i7-11800H @ 2.30GHz",
+                      "vector_bits":  512,
+                      "samples":  8,
+                      "benchtime":  "1s",
+                      "gomaxprocs":  1,
+                      "order":  "Rotate main, main-simd, fallback, simd after every sample",
+                      "scope":  "Warm queries; database opening, workload selection and warmup excluded",
+                      "variants":  {
+                                       "main":  "Unmodified main, GOEXPERIMENT unset",
+                                       "main-simd":  "Unmodified main, GOEXPERIMENT=simd",
+                                       "fallback":  "Modified code, GOEXPERIMENT=simd, GODEBUG=simd=0",
+                                       "simd":  "Modified code, GOEXPERIMENT=simd, automatic hardware width"
+                                   }
+                  }
+}

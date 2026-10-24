@@ -195,7 +195,24 @@ func (db *DB) distanceWithin(id uint32, p Point, cutoff float64) (float64, error
 		first := Point{float64(int32(le.Uint32(b))) / coordScale, float64(int32(le.Uint32(b[4:]))) / coordScale}
 		prevLat := first.Lat
 		d = min(d, haversineWithCos(p, first, cosLat))
+		// Small paths and windows covering every latitude do not repay the
+		// block setup. A scheduled index keeps their per-segment check cheap.
+		nextBlock := count
+		if useGeometryBlocks && count > 256 && (south > -90 || north < 90) {
+			nextBlock = 1
+		}
 		for j := 1; j < count; j++ {
+			// Reject 64 consecutive segments together, including both endpoints
+			// of the block. Such a block cannot cross the containment ray either.
+			if useGeometryBlocks && j == nextBlock {
+				nextBlock += 64
+				if count-j >= 64 && (prevLat < south || prevLat > north) &&
+					latitudeBlockOutside(b[(j-1)*8:(j+64)*8], south, north) {
+					j += 63
+					prevLat = float64(int32(le.Uint32(b[j*8:]))) / coordScale
+					continue
+				}
+			}
 			lat := float64(int32(le.Uint32(b[j*8:]))) / coordScale
 			aLat := prevLat
 			prevLat = lat

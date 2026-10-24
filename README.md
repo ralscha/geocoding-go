@@ -298,6 +298,146 @@ For real-data benchmarks, set `GEOCODE_BENCH_DB` to your imported database and r
 `task bench -- -count=5`. Compare repeated runs on the same machine and query
 corpus; synthetic timings alone do not establish production latency.
 
+### Experimental SIMD
+
+Long reverse-query geometries can benefit from Go's experimental
+[`simd` package](https://go.dev/blog/simd-experiment). The geometry scan checks
+blocks of 64 segments and skips a block only when all 65 vertices lie strictly
+outside the latitude window on the same side. The surviving segments use the
+existing distance and polygon-containment calculations. Database files and
+query results use the same format.
+
+Normal builds retain the original segment scan. To enable block scanning with
+vectorized integer min/max on amd64 or arm64, build with Go 1.27 and
+`GOEXPERIMENT=simd`:
+
+```sh
+GOEXPERIMENT=simd go test ./...
+GOEXPERIMENT=simd go build -o bin/geocode ./cmd/geocode
+```
+
+In PowerShell, set `$env:GOEXPERIMENT = 'simd'` before the Go commands, and use
+`Remove-Item Env:GOEXPERIMENT` to return to normal builds. Unsupported
+architectures retain the original scan. On supported architectures, CPUs without
+hardware SIMD use scalar block checks. `GODEBUG=simd=0` also selects that fallback.
+Release builds keep SIMD disabled; the API remains experimental. CI tests
+ordinary, SIMD, and fallback builds.
+
+Measured on 2026-10-24 against `main` at `7a58163`, using Go 1.27.3,
+Windows/amd64, and an Intel i7-11800H (AVX-512). These are medians of six
+samples per benchmark, `-benchtime=300ms -cpu=1`, with the baseline and
+experimental binaries run in rotating order. Database setup is excluded.
+
+| Synthetic workload | Main | SIMD | Time change |
+| --- | ---: | ---: | ---: |
+| 8,192-segment line traversal, 1 km cutoff | 22.50 µs | 9.67 µs | -57% |
+| 8,192-segment polygon traversal, 1 km cutoff | 23.33 µs | 10.73 µs | -54% |
+| Full reverse queries around a large polygon, 128 query points | 74.10 µs | 63.27 µs | -15% |
+| 64-segment scan, 1 km cutoff | 297 ns | 327 ns | +10% |
+| 256-segment scan, 1 km cutoff | 813 ns | 983 ns | +21% |
+| 8,192-segment scan without a radius window | 996 µs | 1,151 µs | +16% |
+| Mixed text searches over 100,000 point features | 2.29 µs | 2.30 µs | No significant change |
+
+The three improvements above have `p=0.002` in benchstat; allocations are
+unchanged (zero for geometry traversal). Some unpruned measurements were noisy,
+and the mixed point-only reverse workload was about 3% slower. This is a useful
+opt-in experiment for long geometries, not evidence of a general speedup.
+These initial measurements used synthetic data; the Switzerland results below
+use an imported OSM extract. ARM64 was cross-compiled, but performance was
+measured only on this amd64 machine.
+
+[Raw results and benchstat comparisons](benchmarks/simd/comparison.txt) include
+the scalar block control (`GODEBUG=simd=0`). That control and the ordinary-build
+control were collected in a subsequent round and have separate raw files;
+some control measurements have wide confidence intervals.
+[Additional controls](benchmarks/simd/controls.txt) compare ordinary builds and
+`main` compiled with `GOEXPERIMENT=simd`. Enabling the experiment alone on
+`main` substantially slowed long scans on this machine; its cause was not
+isolated, so the table uses ordinary `main` as the baseline.
+The comparison tool was `golang.org/x/perf/cmd/benchstat` at
+`v0.0.0-20261009192801-be2c69fb417e`.
+
+To reproduce, put `geometry_benchmark_test.go` in both the `main` checkout and
+this checkout, then run the command below in each, with and without
+`GOEXPERIMENT=simd`. Use `GODEBUG=simd=0` with the experimental build for the
+scalar block control. Alternate runs between binaries to reduce timing drift.
+
+```sh
+go test -run '^$' -bench '^Benchmark(GeometryTraversal|GeometryWindow|ReverseLongGeometry|SearchMixed|ReverseMixed|ReverseAddressMixed)$' -benchmem -benchtime=300ms -count=6 -cpu=1 .
+```
+
+The best candidates are long roads and polygon rings where a narrow query
+radius excludes most segments. Short address geometries, spherical
+trigonometry, indexed posting-list seeks, and PBF varint decoding offer less
+direct benefit. Prepared administrative-boundary containment is another
+possible target, but its existing latitude buckets already shorten the scan;
+it has not been vectorized or benchmarked here.
+
+#### Switzerland extract
+
+`switzerland-261023.osm.pbf` (549,114,239 bytes) was imported with unmodified
+`main` at `7a58163`, eight workers, and CPU profiling enabled. Import took
+33.77 seconds and produced 3,118,248 features in an 892,913,038-byte database.
+Database checksum and posting verification passed. Both implementations use
+this same database, stored locally at `.cache/switzerland-261023.db`.
+
+The mixed workloads sample 128 addresses across the database. A second workload
+uses a deterministic reservoir sample of 128 non-administrative features with
+paths longer than 256 vertices, querying a few metres from a middle vertex.
+There are 1,160 eligible features in the extract; sampled paths have 257–4,297
+vertices (median 379). The direct geometry benchmark measures those features
+with a 1 km cutoff; the full reverse benchmark also includes spatial traversal,
+other candidate geometries, ranking, and result construction.
+
+Results use eight samples per build, `-benchtime=1s -cpu=1`, on the same
+Windows/amd64 machine as the synthetic run. The run order rotates between
+ordinary `main`, `main` with `GOEXPERIMENT=simd`, the scalar block fallback,
+and SIMD. Database opening, workload selection, and query warmup are excluded;
+these timings describe warm queries, not startup or cold-cache performance.
+
+| Real-data workload | Main | SIMD | Time change |
+| --- | ---: | ---: | ---: |
+| Mixed reverse queries | 200.7 µs | 112.1 µs | -44.1% |
+| Reverse queries near long features | 171.58 µs | 80.16 µs | -53.3% |
+| Address-only mixed reverse queries | 65.52 µs | 73.16 µs | +11.7% |
+| Mixed forward searches | 12.11 µs | 12.32 µs | No significant change |
+| Direct distances to sampled long features | 35.08 µs | 35.33 µs | No significant change |
+
+Both reverse-query improvements have `p<0.001`; the address-only regression
+has `p=0.028` and a wide confidence interval. Allocation counts and bytes per
+query are unchanged. Scalar batching alone took 177.0 µs for mixed reverse
+queries and 126.5 µs near long features, so hardware SIMD reduced those times
+by a further 37%. A separate profile of the baseline mixed-reverse benchmark
+attributed 67% of CPU samples to `distanceWithin`.
+
+These results support using SIMD for unrestricted reverse queries on this
+extract. The address-only regression and the earlier short-geometry results
+still warrant keeping it opt-in. The 128-query samples are reproducible
+performance probes, not a production traffic distribution or a tail-latency
+measurement. [All samples and benchstat comparisons](benchmarks/simd/switzerland/comparison.txt)
+include the experiment-only and scalar fallback controls; simply enabling
+`GOEXPERIMENT=simd` on unchanged `main` again regressed unrestricted reverse
+queries substantially on this machine.
+
+The mixed and long-geometry result snapshots match byte-for-byte between
+`main` and SIMD, including ordering, scores, and distances for the sampled
+queries. [Dataset metadata and snapshot hashes](benchmarks/simd/switzerland/metadata.json)
+record the exact PBF/database checksums and import statistics.
+
+For reproduction, also copy `realdata_benchmark_test.go` into the baseline
+checkout. In PowerShell, set an absolute database path before switching
+checkouts and repeat the benchmark with the build/runtime settings above:
+
+```powershell
+$env:GEOCODE_BENCH_DB = (Resolve-Path .cache/switzerland-261023.db).Path
+$env:GOEXPERIMENT = 'simd'
+go test -run '^$' -bench '^Benchmark(SearchMixed|ReverseMixed|ReverseAddressMixed|RealLongGeometry|ReverseRealLongFeatures)$' -benchmem -benchtime=1s -count=8 -cpu=1 .
+```
+
+Set `GEOCODE_QUERY_SNAPSHOT` and `GEOCODE_GEOMETRY_SNAPSHOT` to output paths,
+then run `go test -run 'Test(QueryWorkloadSnapshot|RealGeometrySnapshot)$' .`
+in each checkout to reproduce the result comparisons.
+
 ### First release
 
 Create the empty `ralscha/geocoding-go` GitHub repository. If this folder has no

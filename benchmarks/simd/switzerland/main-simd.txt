@@ -1,0 +1,80 @@
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   14577	     85205 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    7093	    500372 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	  109176	     11405 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    5281	    444765 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   18235	     60910 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   35346	     34242 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    6489	    529312 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	  114753	     13555 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    8396	    513600 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   19440	     64700 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   34896	     34271 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    5905	    502360 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	   92624	     13056 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    5619	    499301 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   14913	     79676 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   33181	     40030 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    2302	    498295 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	  106042	     12559 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    5001	    443890 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   18111	     61815 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   33656	     35795 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    6955	    512367 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	  105487	     12724 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    4951	    436806 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   16965	     67942 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   34894	     34170 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    7084	    512635 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	   93823	     11803 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    2643	    497789 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   16389	     67872 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   15583	     81306 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    6495	    514503 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	   84934	     13616 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    2840	    577787 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   10000	    100612 ns/op	     507 B/op	       5 allocs/op
+PASS
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkRealLongGeometry        	   35145	     34449 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReverseRealLongFeatures 	    6988	    503950 ns/op	     464 B/op	       3 allocs/op
+BenchmarkSearchMixed             	  121180	     11819 ns/op	    1176 B/op	       9 allocs/op
+BenchmarkReverseMixed            	    7963	    473554 ns/op	     495 B/op	       4 allocs/op
+BenchmarkReverseAddressMixed     	   19638	     61654 ns/op	     507 B/op	       5 allocs/op
+PASS

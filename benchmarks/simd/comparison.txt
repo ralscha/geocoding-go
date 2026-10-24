@@ -1,0 +1,61 @@
+goos: windows
+goarch: amd64
+pkg: github.com/ralscha/geocoding-go
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+                                         │ benchmarks/simd/main.txt │     benchmarks/simd/fallback.txt      │       benchmarks/simd/simd.txt        │
+                                         │          sec/op          │     sec/op      vs base               │     sec/op      vs base               │
+GeometryWindow/segments=8/cutoff=1000                  161.7n ± 18%    165.4n ±  19%   +2.29% (p=0.041 n=6)    173.8n ±  76%   +7.55% (p=0.041 n=6)
+GeometryWindow/segments=8/cutoff=+Inf                  1.035µ ±  4%    1.036µ ±  30%        ~ (p=0.974 n=6)    1.071µ ±   4%        ~ (p=0.132 n=6)
+GeometryWindow/segments=64/cutoff=1000                 297.1n ±  6%    321.0n ±   1%   +8.06% (p=0.002 n=6)    326.9n ±   4%  +10.05% (p=0.002 n=6)
+GeometryWindow/segments=64/cutoff=+Inf                 8.143µ ±  7%    8.061µ ± 125%        ~ (p=0.589 n=6)    8.521µ ± 116%        ~ (p=0.093 n=6)
+GeometryWindow/segments=256/cutoff=1000                812.7n ±  6%   1020.5n ±  10%  +25.57% (p=0.002 n=6)    982.9n ±   2%  +20.94% (p=0.002 n=6)
+GeometryWindow/segments=256/cutoff=+Inf                30.66µ ±  2%    31.01µ ±   1%   +1.12% (p=0.015 n=6)    31.34µ ±   4%        ~ (p=0.065 n=6)
+GeometryWindow/segments=8192/cutoff=1000              21.921µ ±  3%   14.247µ ±   3%  -35.01% (p=0.002 n=6)    9.509µ ±   6%  -56.62% (p=0.002 n=6)
+GeometryWindow/segments=8192/cutoff=+Inf               995.9µ ±  4%    988.3µ ±  94%        ~ (p=1.000 n=6)   1150.8µ ±  46%  +15.56% (p=0.041 n=6)
+ReverseLongGeometry                                    74.10µ ±  6%    91.85µ ±  32%  +23.95% (p=0.002 n=6)    63.27µ ±   9%  -14.62% (p=0.002 n=6)
+GeometryTraversal/line                                22.496µ ±  4%   22.425µ ±  38%        ~ (p=1.000 n=6)    9.672µ ±  10%  -57.00% (p=0.002 n=6)
+GeometryTraversal/polygon                              23.33µ ±  3%    24.55µ ±  25%        ~ (p=0.589 n=6)    10.73µ ±   8%  -54.02% (p=0.002 n=6)
+SearchMixed                                            2.291µ ±  7%    3.368µ ±  11%  +47.01% (p=0.002 n=6)    2.298µ ±   7%        ~ (p=0.937 n=6)
+ReverseMixed                                           4.810µ ±  2%    7.417µ ±  45%  +54.19% (p=0.002 n=6)    4.958µ ±  77%   +3.09% (p=0.041 n=6)
+ReverseAddressMixed                                    4.814µ ±  2%    7.276µ ±  46%  +51.16% (p=0.002 n=6)    4.894µ ±   3%        ~ (p=0.180 n=6)
+geomean                                                6.803µ          7.510µ         +10.40%                  5.914µ         -13.06%
+
+                                         │ benchmarks/simd/main.txt │     benchmarks/simd/fallback.txt     │       benchmarks/simd/simd.txt       │
+                                         │           B/op           │     B/op      vs base                │     B/op      vs base                │
+GeometryWindow/segments=8/cutoff=1000                  0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8/cutoff=+Inf                  0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=64/cutoff=1000                 0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=64/cutoff=+Inf                 0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=256/cutoff=1000                0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=256/cutoff=+Inf                0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8192/cutoff=1000               0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8192/cutoff=+Inf               0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+ReverseLongGeometry                                    312.0 ± 0%       312.0 ± 0%       ~ (p=1.000 n=6) ¹     312.0 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/line                                 0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/polygon                              0.000 ± 0%       0.000 ± 0%       ~ (p=1.000 n=6) ¹     0.000 ± 0%       ~ (p=1.000 n=6) ¹
+SearchMixed                                          1.346Ki ± 0%     1.346Ki ± 0%       ~ (p=1.000 n=6) ¹   1.346Ki ± 0%       ~ (p=1.000 n=6) ¹
+ReverseMixed                                           375.0 ± 0%       375.0 ± 0%       ~ (p=1.000 n=6) ¹     375.0 ± 0%       ~ (p=1.000 n=6) ¹
+ReverseAddressMixed                                    375.0 ± 0%       375.0 ± 0%       ~ (p=1.000 n=6) ¹     375.0 ± 0%       ~ (p=1.000 n=6) ¹
+geomean                                                           ²                 +0.00%               ²                 +0.00%               ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean
+
+                                         │ benchmarks/simd/main.txt │    benchmarks/simd/fallback.txt    │      benchmarks/simd/simd.txt      │
+                                         │        allocs/op         │ allocs/op   vs base                │ allocs/op   vs base                │
+GeometryWindow/segments=8/cutoff=1000                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8/cutoff=+Inf                  0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=64/cutoff=1000                 0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=64/cutoff=+Inf                 0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=256/cutoff=1000                0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=256/cutoff=+Inf                0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8192/cutoff=1000               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryWindow/segments=8192/cutoff=+Inf               0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+ReverseLongGeometry                                    3.000 ± 0%     3.000 ± 0%       ~ (p=1.000 n=6) ¹   3.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/line                                 0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+GeometryTraversal/polygon                              0.000 ± 0%     0.000 ± 0%       ~ (p=1.000 n=6) ¹   0.000 ± 0%       ~ (p=1.000 n=6) ¹
+SearchMixed                                            13.00 ± 0%     13.00 ± 0%       ~ (p=1.000 n=6) ¹   13.00 ± 0%       ~ (p=1.000 n=6) ¹
+ReverseMixed                                           5.000 ± 0%     5.000 ± 0%       ~ (p=1.000 n=6) ¹   5.000 ± 0%       ~ (p=1.000 n=6) ¹
+ReverseAddressMixed                                    5.000 ± 0%     5.000 ± 0%       ~ (p=1.000 n=6) ¹   5.000 ± 0%       ~ (p=1.000 n=6) ¹
+geomean                                                           ²               +0.00%               ²               +0.00%               ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean
