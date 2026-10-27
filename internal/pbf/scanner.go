@@ -3,7 +3,6 @@ package osmpbf
 import (
 	"context"
 	"io"
-	"sync/atomic"
 
 	"github.com/paulmach/osm"
 )
@@ -71,7 +70,7 @@ func New(ctx context.Context, r io.Reader, procs int) *Scanner {
 // by Type, ID, Version in OSM protobuf files, versions of given element may
 // span blocks.
 func (s *Scanner) FullyScannedBytes() int64 {
-	return atomic.LoadInt64(&s.decoder.cOffset)
+	return s.decoder.cOffset.Load()
 }
 
 // PreviousFullyScannedBytes returns the previous value of FullyScannedBytes.
@@ -80,7 +79,7 @@ func (s *Scanner) FullyScannedBytes() int64 {
 // is no way of knowing if the first relation is complete, so skip it. But if this relation
 // is the first relation in the file we'll skip a full relation.
 func (s *Scanner) PreviousFullyScannedBytes() int64 {
-	return atomic.LoadInt64(&s.decoder.pOffset)
+	return s.decoder.pOffset.Load()
 }
 
 // Close cleans up all the reading goroutines, it does not

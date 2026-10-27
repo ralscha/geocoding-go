@@ -46,7 +46,7 @@ func TestUnionPostingsMatchesReference(t *testing.T) {
 		parts := make([][]byte, partCount)
 		weights := make(map[uint32]uint32)
 		for i := range parts {
-			for id := uint32(0); id < 400; id++ {
+			for id := range uint32(400) {
 				if rng.IntN(9) != 0 {
 					continue
 				}

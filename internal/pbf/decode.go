@@ -81,8 +81,8 @@ type decoder struct {
 	outputs    []<-chan oPair
 	serializer chan oPair
 
-	pOffset int64
-	cOffset int64
+	pOffset atomic.Int64
+	cOffset atomic.Int64
 	cData   oPair
 	cIndex  int
 }
@@ -298,8 +298,8 @@ func (dec *decoder) Next() (osm.Object, error) {
 		}
 
 		if cd.Err == nil {
-			atomic.StoreInt64(&dec.pOffset, atomic.LoadInt64(&dec.cOffset))
-			atomic.StoreInt64(&dec.cOffset, cd.Offset)
+			dec.pOffset.Store(dec.cOffset.Load())
+			dec.cOffset.Store(cd.Offset)
 		}
 		dec.cData = cd
 		dec.cIndex = 0

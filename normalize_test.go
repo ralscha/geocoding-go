@@ -21,7 +21,7 @@ func TestNormalize(t *testing.T) {
 }
 
 func TestNormalizeASCIICharacterClasses(t *testing.T) {
-	for c := byte(0); c < 128; c++ {
+	for c := range byte(128) {
 		middle := c
 		switch {
 		case c >= 'A' && c <= 'Z':

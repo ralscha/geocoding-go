@@ -190,7 +190,7 @@ func (db *DB) Search(ctx context.Context, q string, opts SearchOptions) ([]Resul
 			if top := db.topPosting(singleTerm); len(top) > 0 {
 				idf := math.Log1p(float64(db.count) / float64(df))
 				best := make(matches, 0, k)
-				for j := 0; j < k; j++ {
+				for j := range k {
 					id := le.Uint32(top[j*8:])
 					if id >= db.count {
 						return nil, corrupt("top posting feature")
