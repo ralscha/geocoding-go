@@ -12,6 +12,6 @@ require (
 
 require (
 	github.com/paulmach/orb v0.14.0 // indirect
-	go.mongodb.org/mongo-driver/v2 v2.10.0 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.10.1 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 )
